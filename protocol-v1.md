@@ -1,4 +1,6 @@
-Protocol Version 1
+# Protocol Version 1
+
+The specification for the MeatMe application protocol, both server and client.
 
 COMMUNICATION
 =============
