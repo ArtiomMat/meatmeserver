@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+const port = "6969"
+const protocolVersion uint16 = 1
+const keySize = 4
+
 type link struct {
 	first bool // First time interacting?
 
@@ -19,13 +23,9 @@ type link struct {
 	t uint32 // Last time of any kind of interaction, including writes from us.
 }
 
-func (l link) updateTime() {
+func (l *link) updateTime() {
 	l.t = uint32(time.Now().Unix())
 }
-
-const port = "6969"
-const protocolVersion uint16 = 1
-const keySize = 4
 
 var links = make(map[net.Addr]*link)
 
