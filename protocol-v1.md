@@ -7,7 +7,7 @@ COMMUNICATION
 
 Done in **4** general stages.
 
-Example:
+## Example:
 
 `Host1` has key `X`, `Host2` has key `Y`.
 `X` and `Y` are not shared in any way, neither host knows the other's key.
@@ -24,7 +24,9 @@ The best way to make sure the packet isn't affected by applying and removing the
 PACKETS
 =======
 
-Packet structure:
+Packets are no more than `PacketSizeMax`(see [COMPLEX STRUCTURES AND CONSTANTS](#complex-structures-and-constants))
+
+## Packet structure:
 ```go
 Version uint16
 EntriesNum uint8
@@ -42,13 +44,9 @@ Data []byte/uint8
 ENTRY TYPES
 ===========
 
-They sperate into two groups, server and client entries, each one has their
-own `EntryType` value space, meaning for instance `EntryType`=42 from a server
-doesn't represent the same data as `EntryType`=42 for the client, though probably
-it represents the same type.
+They sperate into two groups, server and client entries, each one has their own `EntryType` value space, meaning for instance `EntryType`=42 from a server doesn't represent the same data as `EntryType`=42 for the client, though probably it represents the same type.
 
-Client entries are obviously purely requests, and server entries are responses
-to those requests.
+Client entries are obviously purely requests, and server entries are responses to those requests.
 
 COMPLEX STRUCTURES AND CONSTANTS
 ================================
@@ -57,32 +55,74 @@ Complex structures that are reused in entries and constants that may change
 in futrue versions of the protocol.
 ```go
 SelfieSize = 64 // The width/height of a selfie.
+PacketSizeMax = 4096 // The maximum size of the packet.
 ```
-CLIENT ENTRIES
-==============
 
-Each definition will be given a number after it's name, which represents it's `EntryType` value: Name(EntryType integer).
+ENTRIES
+=======
 
-IdentifyEntry(0):
+Each definition will be given a number after it's name, which represents it's `EntryType` value: `Name=EntryType integer`.
+
+---------------------------
+
 ```go
-NewUser byte
-Selfie []byte
+IdentifyEntry=0 // Client & Server
 ```
 Sent when the client attempts to log in, requests the server to identify them.
-* `NewUser` implies that we are a new user.
-* `Selfie` is an array of pixels in RGB888 format. With it's width and height being
-equal to `SelfieSize`.
 
-SERVER ENTRIES
-==============
-
-IdentifyEntry(0):
+## Client:
 ```go
-Error byte
+Selfie []byte
+```
+* `NewUser` implies that we are a new user.
+* `Selfie` is an array of pixels in RGB888 format. With it's width and height being equal to `SelfieSize`.
+
+## Server:
+```go
+Success byte
+YouExist byte
 Class byte
 ```
-
-* `Sent` as a response to IdentifyEntry from client.
-* `YouExist` is a boolean value that represents if the user was or was not found in
-the database respectively.
+* `Success` is .
+* `YouExist` is a boolean value that represents if the user was or was not found in the database respectively.
 * `Class` includes: 0 for Femboy, 1 for Male, 2 for Alien.
+
+---------------------------
+
+```go
+SetupEntry=1 // Client & Server
+```
+Sent after usccessful ID.
+
+## Client:
+```go
+Name []byte
+Tags []byte
+```
+* `Name` is an ASCII null terminated string, the name is automatically formatted by the server to have a capital letter in the beginning, only the first word, 
+* `Tags` is an array of ASCII null terminated strings, each one is seperated by a null terminator, example: `Games\0Stuff\0More stuff\0`. 
+
+## Server:
+```go
+// EntryType only, no EntryData.
+```
+Entry is empty, it confirms.
+
+---------------------------
+```go
+CompleteTag=1 // Client & Server
+```
+Sent after usccessful ID.
+
+## Client:
+```go
+Tag []byte
+```
+* `Name` is an ASCII null terminated string, the name is automatically formatted by the server to have a capital letter in the beginning, only the first word, 
+* `Tags` is an array of ASCII null terminated strings, each one is seperated by a null terminator, example: `Games\0Stuff\0More stuff\0`. 
+
+## Server:
+```go
+BestTags []byte
+```
+

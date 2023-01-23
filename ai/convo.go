@@ -2,13 +2,13 @@ package ai
 
 import (
 	"encoding/base64"
-	"image/png"
+	"image/jpeg"
 	"os"
 	"strings"
 )
 
 type image struct {
-	pixels []byte // Raw pixel data
+	pixels []float32 // Raw pixel data
 }
 
 type cUnit struct {
@@ -25,12 +25,20 @@ func newImage(fp string) *image {
 	file.Read(rawData)
 
 	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(string(rawData)))
-	iRaw, _ := png.Decode(reader)
+	iRaw, _ := jpeg.Decode(reader)
 
 	mono := true
+	transparent := false
 	for y := 0; y < iRaw.Bounds().Dy(); y++ {
 		for x := 0; x < iRaw.Bounds().Dx(); x++ {
 			r, g, b, a := iRaw.At(x, y).RGBA()
+
+			if r == g && r == b {
+				if a < 255 {
+
+				}
+
+			}
 		}
 	}
 
