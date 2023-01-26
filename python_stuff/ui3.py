@@ -15,7 +15,7 @@ start_x,start_y,end_x,end_y = 0,0,0,0
 
 generate_rectangle,move_rectangle=False,False
 
-dir_in_files = os.listdir(dir_in)
+dir_in_files = os.listdir(dir_in).sort()
 
 move_x,move_y=0,0
 
@@ -77,6 +77,9 @@ def on_key(event):
 
 def open_image(i):
 	global w,h
+	if i >= len(dir_in_files):
+		print("DONE!")
+		on_close()
 	pil_image = Image.open(dir_in+"/"+dir_in_files[i])
 	w, h = pil_image.width, pil_image.height
 
