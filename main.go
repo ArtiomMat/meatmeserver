@@ -6,6 +6,8 @@ import (
 	"math/rand"
 	"net"
 	"time"
+
+	"example.com/meatme/ai"
 )
 
 const port = "6969"
@@ -85,6 +87,9 @@ func parse(linkPtr *link, p []byte, addr net.Addr) {
 }
 
 func main() {
+	var image ai.Image
+	image.Open("0.jpg")
+
 	listener, e := net.ListenPacket("udp", ":"+port)
 	if e != nil {
 		log.Fatal(e)
