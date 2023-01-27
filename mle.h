@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 /*
 	Machine Learning EASY!
 
@@ -25,8 +27,18 @@ typedef struct {
 	int channels_n;
 } mle_map_t;
 
-void mle_load_map(mle_map_t* map, const char* fp);
+// Must be freed with mle_free_map()
+void mle_init_map(mle_map_t* map, short w, short h, int channels_n);
+void mle_free_map(mle_map_t* map);
 // Returns 0 on failure, 1 on success.
+// Must be freed with mle_free_map()
+char mle_load_map(mle_map_t* map, const char* fp);
+// If quality is 100 no compression is applied, 0 is just death.
+// Before saving map should be limited to avoid visual glitches. OVERRIDES EXISTING FILES! Returns 0 on failure, 1 on success.
+char mle_save_map_jpeg(mle_map_t* map, const char* fp, int quality);
+// Before saving map should be limited to avoid visual glitches. OVERRIDES EXISTING FILES! Returns 0 on failure, 1 on success.
+char mle_save_map_png(mle_map_t* map, const char* fp);
+// Before saving map should be limited to avoid visual glitches. OVERRIDES EXISTING FILES! Returns 0 on failure, 1 on success.
 char mle_save_map(mle_map_t* map, const char* fp);
 // Copies the data aswell, useful.
 void mle_copy_map(mle_map_t* from, mle_map_t* to);
@@ -46,17 +58,18 @@ void mle_crop_map(mle_map_t* map, short l, short t, short r, short b);
 // Can cause loss of data, since image can go out of bounds, so crop the map
 // to make it bigger to keep the data.
 void mle_rotate_map(mle_map_t* map, float deg);
-// Random noise across all channels, 0 means no loss 1 means total loss of data.
-void mle_noise_map(mle_map_t* map, float strength);
-// Pepper only noise, 0 means no loss 1 means total loss of data.
-void mle_noise_map_pepper(mle_map_t* map, float strength);
-// Salt only noise, 0 means no loss 1 means total loss of data..
-void mle_noise_map_salt(mle_map_t* map, float strength);
-// Salt and pepper noise, faster than the two functions called individually.
-// 0 means no loss 1 means total loss of data.
-void mle_noise_map_snp(mle_map_t* map, float strength);
+// Random noise across all channels, 0 means no loss 255 means total loss of data.
+void mle_noise_map(mle_map_t* map, uint8_t strength);
+// The noise is applied but the pixel values are limited to min and max.
+// Random noise across all channels, 0 means no loss 255 means total loss of data.
+void mle_noise_map_limited(mle_map_t* map, uint8_t strength, float min, float max);
+// value is what we set the pixel if it is chosen to be killed.
+// Pepper only noise, 0 means no loss 255 means total loss of data.
+void mle_noise_map_killer(mle_map_t* map, uint8_t strength, float value);
+// Pixels above of below min or max are set to min or max respectively.
+void mle_limit_map(mle_map_t* map, float min, float max);
 
-/*typedef struct {
+typedef struct {
 	mle_map_t map;
 	float bias;
-} mle_kernel_t;*/
+} mle_kernel_t;
