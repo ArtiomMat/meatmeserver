@@ -66,6 +66,10 @@ void mle_crop_map(mle_map_t* map_p, mle_crd_t l, mle_crd_t t, mle_crd_t r, mle_c
 // to make it bigger to keep the data.
 void mle_rotate_map(mle_map_t* map_p, float deg);
 void mle_rotate_map_around(mle_map_t* map_p, float deg, mle_crd_t x, mle_crd_t y);
+// 1 means no change.
+void mle_brighten_map(mle_map_t* map_p, float factor);
+// 1 means no change.
+void mle_contrast_map(mle_map_t* map_p, float factor);
 // Random noise across all channels, 0 means no loss 255 means total loss of data.
 void mle_noise_map(mle_map_t* map_p, uint8_t strength);
 // The noise is applied but the pixel values are limited to min and max.
@@ -79,3 +83,4 @@ void mle_limit_map(mle_map_t* map_p, mle_val_t min, mle_val_t max);
 void mle_pool_map_avg(mle_map_t* map_p, int stride, int w, int h);
 void mle_pool_map_max(mle_map_t* map_p, int stride, int w, int h);
 void mle_pool_map_min(mle_map_t* map_p, int stride, int w, int h);
+
