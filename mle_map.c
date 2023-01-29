@@ -333,10 +333,10 @@ void mle_resize_map_s(mle_map_t* map_p, mle_crd_t w, mle_crd_t h) {
 			short rb_x = lt_x+1, rb_y = lt_y+1;
 
 			// Distances of surrounding pixels
-			float d_lt = (abs(m_x-lt_x)+abs(m_y-lt_y))/2;
-			float d_lb = (abs(m_x-lb_x)+abs(m_y-lb_y))/2;
-			float d_rt = (pow2(m_x-rt_x)+abs(m_y-rt_y))/2;
-			float d_rb = (abs(m_x-rb_x)+abs(m_y-rb_y))/2;
+			float d_lt = (pow2(m_x-lt_x)+pow2(m_y-lt_y))/2;
+			float d_lb = (pow2(m_x-lb_x)+pow2(m_y-lb_y))/2;
+			float d_rt = (pow2(m_x-rt_x)+pow2(m_y-rt_y))/2;
+			float d_rb = (pow2(m_x-rb_x)+pow2(m_y-rb_y))/2;
 
 			// The combination of the pixels
 			mle_get_map_pixel(map_p, picked_pixel, lt_x, lt_y);
