@@ -20,6 +20,8 @@
 typedef unsigned short mle_crd_t;
 typedef float mle_val_t;
 
+void mle_rng_seed(long seed);
+
 /*
 	The default value ranges of data are 0 to 1, this is how it is when
 	maps are loaded from images, but the map is meant to be used beyond that,
@@ -62,10 +64,11 @@ void mle_resize_map_s(mle_map_t* map_p, mle_crd_t w, mle_crd_t h);
 // left right top bottom. if cropped out of bounds 0 is written to the new
 // data.
 void mle_crop_map(mle_map_t* map_p, mle_crd_t l, mle_crd_t t, mle_crd_t r, mle_crd_t b);
+// Rotates map around center, see mle_rotate_map_around()
+void mle_rotate_map(mle_map_t* map_p, float rad);
 // Can cause loss of data, since image can go out of bounds, so crop the map_p
 // to make it bigger to keep the data.
-void mle_rotate_map(mle_map_t* map_p, float deg);
-void mle_rotate_map_around(mle_map_t* map_p, float deg, mle_crd_t x, mle_crd_t y);
+void mle_rotate_map_around(mle_map_t* map_p, float rad, mle_crd_t x, mle_crd_t y);
 // 1 means no change, called lighten but you can also darken it(factor < 1).
 void mle_lighten_map(mle_map_t* map_p, float factor);
 // 1 means no change.

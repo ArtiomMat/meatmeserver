@@ -9,16 +9,14 @@
 
 #include "mle.h"
 
-static long _rng_seed = 1;
-static void rng_seed(long seed)
-{
-	_rng_seed = seed;
+static long rng_seed = 1;
+void mle_rng_seed(long seed) {
+	rng_seed = seed;
 }
 // Good luck getting repeating values out of this
-static int rng(void)
-{
-	_rng_seed = (_rng_seed * 0x2051064DE3) >> 32;
-	return (int)_rng_seed;
+static int rng(void) {
+	rng_seed = (rng_seed * 0x2051064DE3) >> 32;
+	return (int)rng_seed;
 }
 
 void mle_init_map(mle_map_t* map_p, mle_crd_t w, mle_crd_t h, int channels_n) {
@@ -44,12 +42,6 @@ void mle_get_map_pixel(mle_map_t* map_p, mle_val_t* pixel, mle_crd_t x, mle_crd_
 void mle_set_map_pixel(mle_map_t* map_p, mle_val_t* pixel, mle_crd_t x, mle_crd_t y) {
 	for (int c = 0; c < map_p->channels_n; c++)
 		map_p->data[(map_p->w*y+x)*map_p->channels_n+c] = pixel[c];
-}
-
-static void ycbcr_to_rgb(float ycbcr[3], float rgb[3]) {
-	rgb[0] = ycbcr[2] + 1.40200 * (ycbcr[0] - 0x80);
-	rgb[1] = ycbcr[2] - 0.34414 * (ycbcr[1] - 0x80) - 0.71414 * (ycbcr[0] - 0x80);
-	rgb[2] = ycbcr[2] + 1.77200 * (ycbcr[1] - 0x80);
 }
 
 static char load_jpeg_map(mle_map_t* map_p, FILE* f) {
@@ -305,6 +297,8 @@ void mle_resize_map(mle_map_t* map_p, mle_crd_t w, mle_crd_t h) {
 	*map_p = resized;
 }
 
+#if 0
+
 static float pow2(float x) {
 	return x*x;
 }
@@ -321,6 +315,10 @@ void mle_resize_map_s(mle_map_t* map_p, mle_crd_t w, mle_crd_t h) {
 	
 	float h_ratio = (float)map_p->h/h;
 	float w_ratio = (float)map_p->w/w;
+	mle_crd_t c_h_ratio = ceilf(h_ratio);
+	mle_crd_t c_w_ratio = ceilf(w_ratio);
+
+	float max_dst = sqrt(c_w_ratio*c_w_ratio + c_h_ratio*c_h_ratio);
 
 	float pixel[map_p->channels_n];
 	float picked_pixel[map_p->channels_n];
@@ -333,10 +331,10 @@ void mle_resize_map_s(mle_map_t* map_p, mle_crd_t w, mle_crd_t h) {
 			// Coordinates of middle pixel we are picking
 			float m_x=x*w_ratio, m_y=y*h_ratio;
 			// Coordinates of surrounding pixels of the middle pixel
-			short lt_x = (short)m_x, lt_y = (short)m_y;
-			short lb_x = lt_x, lb_y = lt_y+1;
-			short rt_x = lt_x+1, rt_y = lt_y;
-			short rb_x = lt_x+1, rb_y = lt_y+1;
+			mle_crd_t lt_x = (mle_crd_t)m_x, lt_y = (mle_crd_t)m_y;
+			mle_crd_t lb_x = lt_x, lb_y = lt_y+1;
+			mle_crd_t rt_x = lt_x+1, rt_y = lt_y;
+			mle_crd_t rb_x = lt_x+1, rb_y = lt_y+1;
 			
 			// Distances of surrounding pixels
 			float s_lt = (1.41-sqrt(pow2(m_x-lt_x)+pow2(m_y-lt_y)))/1.41;
@@ -359,13 +357,49 @@ void mle_resize_map_s(mle_map_t* map_p, mle_crd_t w, mle_crd_t h) {
 			mle_get_map_pixel(map_p, picked_pixel, rb_x, rb_y);
 			for (int c = 0; c < map_p->channels_n; c++)
 				pixel[c] += s_rb*picked_pixel[c]/sum;
-
-			mle_set_map_pixel(&resized, pixel, x, y);
-		}
 	}
 
 	mle_free_map(map_p);
 	*map_p = resized;
+}
+
+#endif
+
+// ======================
+// ROTATION
+// ======================
+
+// I HAVE NO FUCKING IDEA WHAT IS GOING ON.
+// I GOT CANCER IMPLEMENTING THIS.
+// AND IT DOENST EVEN FUCKING WORKKKKKKKKKKKK.
+// It's based on the shearing method, but a retarded way.
+void mle_rotate_map(mle_map_t* map_p, float rad) {
+	float* rotated_data = calloc(sizeof(mle_val_t)*map_p->channels_n*map_p->w*map_p->h, 1);
+
+	float t = tanf(rad/2);
+	float s = sinf(rad);
+
+	for (mle_crd_t x = 0; x < map_p->w; x++) {
+		for (mle_crd_t y = 0; y < map_p->h; y++) {
+			int new_x = x, new_y = y;
+			// There's some matrix math, NO FUCKING IDEA.
+			new_x = new_x - t*new_y + map_p->w/2*t;
+			new_y = new_y + new_x*s - map_p->w/2*t;
+			new_x = new_x - t*new_y + map_p->w/2*t;
+
+			// Discarding pixels that come out
+			if (
+				new_x >= 0 && new_x < map_p->w && 
+				new_y >= 0 && new_y < map_p->h
+			)
+				for (int c = 0; c < map_p->channels_n; c++) {
+					rotated_data[(map_p->w*new_y+new_x)*map_p->channels_n+c]=
+					map_p->data[(map_p->w*y+x)*map_p->channels_n+c];
+				}
+		}
+	}
+	free(map_p->data);
+	map_p->data = rotated_data;
 }
 
 // ======================
@@ -403,7 +437,9 @@ void mle_noise_map_killer(mle_map_t* map_p, uint8_t strength, mle_val_t value) {
 	}
 }
 
+// ======================
 // MISC
+// ======================
 
 void mle_contrast_map(mle_map_t* map_p, float factor) {
 	for (int i = 0; i < map_p->channels_n*map_p->w*map_p->h; i++)
