@@ -405,6 +405,14 @@ void mle_noise_map_killer(mle_map_t* map_p, uint8_t strength, mle_val_t value) {
 
 // MISC
 
+void mle_contrast_map(mle_map_t* map_p, float factor) {
+	for (int i = 0; i < map_p->channels_n*map_p->w*map_p->h; i++)
+		map_p->data[i] = factor*(map_p->data[i] - 0.5f) + 0.5f;
+}
+void mle_lighten_map(mle_map_t* map_p, float factor) {
+	for (int i = 0; i < map_p->channels_n*map_p->w*map_p->h; i++)
+		map_p->data[i] *= factor;
+}
 
 void mle_limit_map(mle_map_t* map_p, mle_val_t min, mle_val_t max) {
 	for (int i = 0; i < map_p->channels_n*map_p->w*map_p->h; i++) {
