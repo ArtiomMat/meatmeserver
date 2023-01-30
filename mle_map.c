@@ -309,6 +309,12 @@ static float pow2(float x) {
 	return x*x;
 }
 
+/*
+	TODO:
+	The ratio is the size of the pooling filter.
+	This makes sense as it fits the idea of a pooling algorithm.
+	So check a ceil(w_ratio) X ceil(h_ratio) pixel thingy.
+*/
 void mle_resize_map_s(mle_map_t* map_p, mle_crd_t w, mle_crd_t h) {
 	mle_map_t resized;
 	mle_init_map(&resized, w, h, map_p->channels_n);
@@ -331,26 +337,28 @@ void mle_resize_map_s(mle_map_t* map_p, mle_crd_t w, mle_crd_t h) {
 			short lb_x = lt_x, lb_y = lt_y+1;
 			short rt_x = lt_x+1, rt_y = lt_y;
 			short rb_x = lt_x+1, rb_y = lt_y+1;
-
+			
 			// Distances of surrounding pixels
-			float d_lt = (pow2(m_x-lt_x)+pow2(m_y-lt_y))/2;
-			float d_lb = (pow2(m_x-lb_x)+pow2(m_y-lb_y))/2;
-			float d_rt = (pow2(m_x-rt_x)+pow2(m_y-rt_y))/2;
-			float d_rb = (pow2(m_x-rb_x)+pow2(m_y-rb_y))/2;
+			float s_lt = (1.41-sqrt(pow2(m_x-lt_x)+pow2(m_y-lt_y)))/1.41;
+			float s_lb = (1.41-sqrt(pow2(m_x-lb_x)+pow2(m_y-lb_y)))/1.41;
+			float s_rt = (1.41-sqrt(pow2(m_x-rt_x)+pow2(m_y-rt_y)))/1.41;
+			float s_rb = (1.41-sqrt(pow2(m_x-rb_x)+pow2(m_y-rb_y)))/1.41;
+
+			float sum = s_lt + s_lb + s_rt + s_rb;
 
 			// The combination of the pixels
 			mle_get_map_pixel(map_p, picked_pixel, lt_x, lt_y);
 			for (int c = 0; c < map_p->channels_n; c++)
-				pixel[c] += d_lt*picked_pixel[c]/4;
+				pixel[c] += s_lt*picked_pixel[c]/sum;
 			mle_get_map_pixel(map_p, picked_pixel, lb_x, lb_y);
 			for (int c = 0; c < map_p->channels_n; c++)
-				pixel[c] += d_lb*picked_pixel[c]/4;
+				pixel[c] += s_lb*picked_pixel[c]/sum;
 			mle_get_map_pixel(map_p, picked_pixel, rt_x, rt_y);
 			for (int c = 0; c < map_p->channels_n; c++)
-				pixel[c] += d_rt*picked_pixel[c]/4;
+				pixel[c] += s_rt*picked_pixel[c]/sum;
 			mle_get_map_pixel(map_p, picked_pixel, rb_x, rb_y);
 			for (int c = 0; c < map_p->channels_n; c++)
-				pixel[c] += d_rb*picked_pixel[c]/4;
+				pixel[c] += s_rb*picked_pixel[c]/sum;
 
 			mle_set_map_pixel(&resized, pixel, x, y);
 		}
