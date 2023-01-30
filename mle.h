@@ -66,8 +66,8 @@ void mle_crop_map(mle_map_t* map_p, mle_crd_t l, mle_crd_t t, mle_crd_t r, mle_c
 // to make it bigger to keep the data.
 void mle_rotate_map(mle_map_t* map_p, float deg);
 void mle_rotate_map_around(mle_map_t* map_p, float deg, mle_crd_t x, mle_crd_t y);
-// 1 means no change.
-void mle_brighten_map(mle_map_t* map_p, float factor);
+// 1 means no change, called lighten but you can also darken it(factor < 1).
+void mle_lighten_map(mle_map_t* map_p, float factor);
 // 1 means no change.
 void mle_contrast_map(mle_map_t* map_p, float factor);
 // Random noise across all channels, 0 means no loss 255 means total loss of data.
