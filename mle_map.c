@@ -383,9 +383,9 @@ void mle_rotate_map(mle_map_t* map_p, float rad) {
 		for (mle_crd_t y = 0; y < map_p->h; y++) {
 			int new_x = x, new_y = y;
 			// There's some matrix math, NO FUCKING IDEA.
-			new_x = new_x - t*new_y + map_p->w/2*t;
-			new_y = new_y + new_x*s - map_p->w/2*t;
-			new_x = new_x - t*new_y + map_p->w/2*t;
+			new_x = roundf(new_x - t*new_y + map_p->w/2*t);
+			new_y = roundf(new_y + new_x*s - map_p->h/2*s);
+			new_x = roundf(new_x - t*new_y + map_p->w/2*t);
 
 			// Discarding pixels that come out
 			if (
