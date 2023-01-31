@@ -393,27 +393,22 @@ void mle_crop_map(mle_map_t* map_p, int l, int t, int r, int b) {
 void mle_rotate_map(mle_map_t* map_p, float rad, mle_crd_t around_x, mle_crd_t around_y) {
 	mle_val_t* rotated_data = calloc(sizeof(mle_val_t)*map_p->channels_n*map_p->w*map_p->h, 1);
 
-	double t = tanf(rad/2);
-	double s = sinf(rad);
+	float c = cosf(-rad);
+	float s = sinf(-rad);
 
 	for (mle_crd_t x = 0; x < map_p->w; x++) {
 		for (mle_crd_t y = 0; y < map_p->h; y++) {
-			int new_x = x-around_x, new_y = y-around_y;
-			// There's some matrix math, NO FUCKING IDEA.
-			new_x = roundf(new_x - t*new_y);// + map_p->w/2*t);
-			new_y = roundf(new_y + new_x*s);// - map_p->h/2*s);
-			new_x = roundf(new_x - t*new_y);// + map_p->w/2*t);
-			new_x += around_x;
-			new_y += around_y;
+			int ol_x = (x-around_x)*c-(y-around_y)*s+around_x;
+			int ol_y = (x-around_x)*s+(y-around_y)*c+around_y;
 
 			// Discarding pixels that come out
 			if (
-				new_x >= 0 && new_x < map_p->w && 
-				new_y >= 0 && new_y < map_p->h
+				ol_x >= 0 && ol_x < map_p->w && 
+				ol_y >= 0 && ol_y < map_p->h
 			)
 				for (int c = 0; c < map_p->channels_n; c++) {
-					rotated_data[(map_p->w*new_y+new_x)*map_p->channels_n+c]=
-					map_p->data[(map_p->w*y+x)*map_p->channels_n+c];
+					rotated_data[(map_p->w*y+x)*map_p->channels_n+c]=
+					map_p->data[(map_p->w*ol_y+ol_x)*map_p->channels_n+c];
 				}
 		}
 	}
