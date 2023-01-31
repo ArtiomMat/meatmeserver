@@ -61,14 +61,12 @@ void mle_set_map_pixel(mle_map_t* map_p, mle_val_t* pixel, mle_crd_t x, mle_crd_
 void mle_resize_map(mle_map_t* map_p, mle_crd_t w, mle_crd_t h);
 // Smooth resizing
 void mle_resize_map_s(mle_map_t* map_p, mle_crd_t w, mle_crd_t h);
-// left right top bottom. if cropped out of bounds 0 is written to the new
-// data.
-void mle_crop_map(mle_map_t* map_p, mle_crd_t l, mle_crd_t t, mle_crd_t r, mle_crd_t b);
-// Rotates map around center, see mle_rotate_map_around()
-void mle_rotate_map(mle_map_t* map_p, float rad);
+// left right top bottom. if cropped out of bounds(<0 OR >w/h-1) 0 is written to
+// the new data.
+void mle_crop_map(mle_map_t* map_p, int l, int t, int r, int b);
 // Can cause loss of data, since image can go out of bounds, so crop the map_p
 // to make it bigger to keep the data.
-void mle_rotate_map_around(mle_map_t* map_p, float rad, mle_crd_t x, mle_crd_t y);
+void mle_rotate_map(mle_map_t* map_p, float rad, mle_crd_t around_x, mle_crd_t around_y);
 // 1 means no change, called lighten but you can also darken it(factor < 1).
 void mle_lighten_map(mle_map_t* map_p, float factor);
 // 1 means no change.

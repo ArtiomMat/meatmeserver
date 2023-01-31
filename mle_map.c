@@ -365,6 +365,23 @@ void mle_resize_map_s(mle_map_t* map_p, mle_crd_t w, mle_crd_t h) {
 
 #endif
 
+void mle_crop_map(mle_map_t* map_p, int l, int t, int r, int b) {
+	mle_crd_t cropped_w = r-l, cropped_h = b-t;
+	mle_val_t* cropped_data = calloc(sizeof(mle_val_t)*map_p->channels_n*cropped_w*cropped_h, 1);
+
+	for (mle_crd_t x = 0; x < map_p->w; x++) {
+		for (mle_crd_t y = 0; y < map_p->h; y++) {
+			for (int c = 0; c < map_p->channels_n; c++)
+					cropped_data[(cropped_w*(y-t)+x-l)*map_p->channels_n+c]=
+					map_p->data[(map_p->w*y+x)*map_p->channels_n+c];
+		}
+	}
+	map_p->w = cropped_w;
+	map_p->h = cropped_h;
+	free(map_p->data);
+	map_p->data = cropped_data;
+}
+
 // ======================
 // ROTATION
 // ======================
@@ -373,19 +390,21 @@ void mle_resize_map_s(mle_map_t* map_p, mle_crd_t w, mle_crd_t h) {
 // I GOT CANCER IMPLEMENTING THIS.
 // AND IT DOENST EVEN FUCKING WORKKKKKKKKKKKK.
 // It's based on the shearing method, but a retarded way.
-void mle_rotate_map(mle_map_t* map_p, float rad) {
-	float* rotated_data = calloc(sizeof(mle_val_t)*map_p->channels_n*map_p->w*map_p->h, 1);
+void mle_rotate_map(mle_map_t* map_p, float rad, mle_crd_t around_x, mle_crd_t around_y) {
+	mle_val_t* rotated_data = calloc(sizeof(mle_val_t)*map_p->channels_n*map_p->w*map_p->h, 1);
 
-	float t = tanf(rad/2);
-	float s = sinf(rad);
+	double t = tanf(rad/2);
+	double s = sinf(rad);
 
 	for (mle_crd_t x = 0; x < map_p->w; x++) {
 		for (mle_crd_t y = 0; y < map_p->h; y++) {
-			int new_x = x, new_y = y;
+			int new_x = x-around_x, new_y = y-around_y;
 			// There's some matrix math, NO FUCKING IDEA.
-			new_x = roundf(new_x - t*new_y + map_p->w/2*t);
-			new_y = roundf(new_y + new_x*s - map_p->h/2*s);
-			new_x = roundf(new_x - t*new_y + map_p->w/2*t);
+			new_x = roundf(new_x - t*new_y);// + map_p->w/2*t);
+			new_y = roundf(new_y + new_x*s);// - map_p->h/2*s);
+			new_x = roundf(new_x - t*new_y);// + map_p->w/2*t);
+			new_x += around_x;
+			new_y += around_y;
 
 			// Discarding pixels that come out
 			if (
