@@ -386,10 +386,8 @@ void mle_crop_map(mle_map_t* map_p, int l, int t, int r, int b) {
 // ROTATION
 // ======================
 
-// I HAVE NO FUCKING IDEA WHAT IS GOING ON.
-// I GOT CANCER IMPLEMENTING THIS.
-// AND IT DOENST EVEN FUCKING WORKKKKKKKKKKKK.
-// It's based on the shearing method, but a retarded way.
+// HORRIBLE FOR SMALL IMAGES, NO IDEA HOW TO IMROVE.
+// It's based on the shearing method.
 void mle_rotate_map(mle_map_t* map_p, float rad, mle_crd_t around_x, mle_crd_t around_y) {
 	mle_val_t* rotated_data = calloc(sizeof(mle_val_t)*map_p->channels_n*map_p->w*map_p->h, 1);
 
