@@ -7,6 +7,8 @@ import time
 w,h = 0,0
 
 dir_in = "data_femboys"
+dir_in_files = os.listdir(dir_in)
+dir_in_files.sort()
 canvas_size = 600
 
 x,y=0,0 # Actual x and y
@@ -15,7 +17,6 @@ start_x,start_y,end_x,end_y = 0,0,0,0
 
 generate_rectangle,move_rectangle=False,False
 
-dir_in_files = os.listdir(dir_in).sort()
 
 move_x,move_y=0,0
 
@@ -28,14 +29,14 @@ def motion(event):
 	x, y = event.x, event.y
 	
 	if generate_rectangle:
-		y = start_y+(x-start_x)
+		# y = start_y+(x-start_x)
 		canvas.coords(canvas_rect, start_x, start_y, x, y)
 	elif move_rectangle:
 		move_x = x
 		move_y = y
 		canvas.coords(canvas_rect, move_x, move_y, abs(end_x-start_x)+move_x, abs(end_y-start_y)+move_y)
 		start_x,start_y,end_x,end_y = move_x, move_y, abs(end_x-start_x)+move_x, abs(end_y-start_y)+move_y
-		 
+		
 def on_press_l(e):
 	global generate_rectangle,x,start_x,start_y,end_y,end_x
 	end_x,end_y=0,0
@@ -80,6 +81,7 @@ def open_image(i):
 	if i >= len(dir_in_files):
 		print("DONE!")
 		on_close()
+		return
 	pil_image = Image.open(dir_in+"/"+dir_in_files[i])
 	w, h = pil_image.width, pil_image.height
 
@@ -104,10 +106,10 @@ def on_close():
 
 if os.path.isfile(dir_in+"_cfg.txt"):
 	cfg_f = open(dir_in+"_cfg.txt", "r")
+	if cfg_f.readable():
+		cfg_str = ""
 	s = cfg_f.read()
 	i = max(0, s.count("\n")-1)
-	if i:
-		cfg_str = ""
 
 loop_running = True
 

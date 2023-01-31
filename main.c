@@ -7,11 +7,30 @@ int main(int args_n, char **args) {
 		puts("Failed to load map.");
 		return 1;
 	}
-	// mle_crop_map(&map, -100, -100, map.w+100, map.h+100);
-	// mle_noise_map_limited(&map, 10, 0, 1);
-	mle_rotate_map(&map, 1, map.w/2, map.h/2);
-	// mle_resize_map(&map, 64, 64);
-//	mle_resize_map_s(&map, 128, 128);
+	mle_brain_trainer_t trainer = {
+		{
+			MLE_LAYER_CONV, 3, 3, 1, -1,
+			MLE_LAYER_MAX_POOL, 3, 3, 1,
+			MLE_LAYER_LEAKY_RELU,
+			
+			MLE_LAYER_CONV, 3, 3, 1, 16,
+			MLE_LAYER_MAX_POOL, 3, 3, 1,
+			MLE_LAYER_LEAKY_RELU,
+
+			MLE_LAYER_NEURONS, -1,
+			MLE_LAYER_DROPOUT,
+			MLE_LAYER_LEAKY_RELU,
+
+			MLE_LAYER_NEURONS, 1,
+			MLE_LAYER_SIGMOID,
+		},
+	};
+
+	mle_resize_map(&map, 64, 64);
+	mle_lighten_map(&map, 0.9f);
+	mle_noise_map(&map, 20);
+	mle_contrast_map(&map, 1.4f);
+	mle_limit_map(&map, 0, 1);
 	mle_save_map_png(&map, "p_resized_smooth.png");
 	return 0;
 }

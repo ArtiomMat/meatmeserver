@@ -281,7 +281,7 @@ void mle_resize_map(mle_map_t* map_p, mle_crd_t w, mle_crd_t h) {
 	mle_init_map(&resized, w, h, map_p->channels_n);
 	
 	mle_val_t h_ratio = (mle_val_t)map_p->h/h;
-	mle_val_t w_ratio = (mle_val_t)map_p->h/w;
+	mle_val_t w_ratio = (mle_val_t)map_p->w/w;
 
 	mle_val_t pixel[map_p->channels_n];
 	for (int y = 0; y < h; y++) {
@@ -297,83 +297,16 @@ void mle_resize_map(mle_map_t* map_p, mle_crd_t w, mle_crd_t h) {
 	*map_p = resized;
 }
 
-#if 0
-
-static float pow2(float x) {
-	return x*x;
-}
-
-/*
-	TODO:
-	The ratio is the size of the pooling filter.
-	This makes sense as it fits the idea of a pooling algorithm.
-	So check a ceil(w_ratio) X ceil(h_ratio) pixel thingy.
-*/
-void mle_resize_map_s(mle_map_t* map_p, mle_crd_t w, mle_crd_t h) {
-	mle_map_t resized;
-	mle_init_map(&resized, w, h, map_p->channels_n);
-	
-	float h_ratio = (float)map_p->h/h;
-	float w_ratio = (float)map_p->w/w;
-	mle_crd_t c_h_ratio = ceilf(h_ratio);
-	mle_crd_t c_w_ratio = ceilf(w_ratio);
-
-	float max_dst = sqrt(c_w_ratio*c_w_ratio + c_h_ratio*c_h_ratio);
-
-	float pixel[map_p->channels_n];
-	float picked_pixel[map_p->channels_n];
-	for (int y = 0; y < h; y++) {
-		for (int x = 0; x < w; x++) {
-			// Reset pixel to write
-			for (int c = 0; c < map_p->channels_n; c++)
-				pixel[c] = 0;
-			
-			// Coordinates of middle pixel we are picking
-			float m_x=x*w_ratio, m_y=y*h_ratio;
-			// Coordinates of surrounding pixels of the middle pixel
-			mle_crd_t lt_x = (mle_crd_t)m_x, lt_y = (mle_crd_t)m_y;
-			mle_crd_t lb_x = lt_x, lb_y = lt_y+1;
-			mle_crd_t rt_x = lt_x+1, rt_y = lt_y;
-			mle_crd_t rb_x = lt_x+1, rb_y = lt_y+1;
-			
-			// Distances of surrounding pixels
-			float s_lt = (1.41-sqrt(pow2(m_x-lt_x)+pow2(m_y-lt_y)))/1.41;
-			float s_lb = (1.41-sqrt(pow2(m_x-lb_x)+pow2(m_y-lb_y)))/1.41;
-			float s_rt = (1.41-sqrt(pow2(m_x-rt_x)+pow2(m_y-rt_y)))/1.41;
-			float s_rb = (1.41-sqrt(pow2(m_x-rb_x)+pow2(m_y-rb_y)))/1.41;
-
-			float sum = s_lt + s_lb + s_rt + s_rb;
-
-			// The combination of the pixels
-			mle_get_map_pixel(map_p, picked_pixel, lt_x, lt_y);
-			for (int c = 0; c < map_p->channels_n; c++)
-				pixel[c] += s_lt*picked_pixel[c]/sum;
-			mle_get_map_pixel(map_p, picked_pixel, lb_x, lb_y);
-			for (int c = 0; c < map_p->channels_n; c++)
-				pixel[c] += s_lb*picked_pixel[c]/sum;
-			mle_get_map_pixel(map_p, picked_pixel, rt_x, rt_y);
-			for (int c = 0; c < map_p->channels_n; c++)
-				pixel[c] += s_rt*picked_pixel[c]/sum;
-			mle_get_map_pixel(map_p, picked_pixel, rb_x, rb_y);
-			for (int c = 0; c < map_p->channels_n; c++)
-				pixel[c] += s_rb*picked_pixel[c]/sum;
-	}
-
-	mle_free_map(map_p);
-	*map_p = resized;
-}
-
-#endif
-
 void mle_crop_map(mle_map_t* map_p, int l, int t, int r, int b) {
 	mle_crd_t cropped_w = r-l, cropped_h = b-t;
 	mle_val_t* cropped_data = calloc(sizeof(mle_val_t)*map_p->channels_n*cropped_w*cropped_h, 1);
 
-	for (mle_crd_t x = 0; x < map_p->w; x++) {
-		for (mle_crd_t y = 0; y < map_p->h; y++) {
+	for (mle_crd_t x = 0; x < cropped_w; x++) {
+		for (mle_crd_t y = 0; y < cropped_h; y++) {
 			for (int c = 0; c < map_p->channels_n; c++)
-					cropped_data[(cropped_w*(y-t)+x-l)*map_p->channels_n+c]=
-					map_p->data[(map_p->w*y+x)*map_p->channels_n+c];
+				if (y+t >= 0 && y+t < map_p->h && x+l >= 0 && x+l < map_p->w)
+					cropped_data[(cropped_w*y+x)*map_p->channels_n+c]=
+					map_p->data[(map_p->w*(y+t)+(x+l))*map_p->channels_n+c];
 		}
 	}
 	map_p->w = cropped_w;
@@ -386,10 +319,10 @@ void mle_crop_map(mle_map_t* map_p, int l, int t, int r, int b) {
 // ROTATION
 // ======================
 
-// TODO: instead of rotating the input pixels, rotate the output pixels in the other direction
-// then younk those pixels, GG.
-// HORRIBLE FOR SMALL IMAGES, NO IDEA HOW TO IMROVE.
-// It's based on the shearing method.
+// This works using the rotation matrix for points, but reversing the concept.
+// Instead of finding the location of the new pixel using the current pixel
+// of the original image, we do the opposite, eliminating gaps and making sure
+// every pixel in the new image is accounted for carefully.
 void mle_rotate_map(mle_map_t* map_p, float rad, mle_crd_t around_x, mle_crd_t around_y) {
 	mle_val_t* rotated_data = calloc(sizeof(mle_val_t)*map_p->channels_n*map_p->w*map_p->h, 1);
 
@@ -401,7 +334,7 @@ void mle_rotate_map(mle_map_t* map_p, float rad, mle_crd_t around_x, mle_crd_t a
 			int ol_x = (x-around_x)*c-(y-around_y)*s+around_x;
 			int ol_y = (x-around_x)*s+(y-around_y)*c+around_y;
 
-			// Discarding pixels that come out
+			// Discarding pixels that come out of bounds
 			if (
 				ol_x >= 0 && ol_x < map_p->w && 
 				ol_y >= 0 && ol_y < map_p->h
@@ -409,6 +342,37 @@ void mle_rotate_map(mle_map_t* map_p, float rad, mle_crd_t around_x, mle_crd_t a
 				for (int c = 0; c < map_p->channels_n; c++) {
 					rotated_data[(map_p->w*y+x)*map_p->channels_n+c]=
 					map_p->data[(map_p->w*ol_y+ol_x)*map_p->channels_n+c];
+				}
+		}
+	}
+	free(map_p->data);
+	map_p->data = rotated_data;
+}
+
+void mle_rotate_map_old(mle_map_t* map_p, float rad, mle_crd_t around_x, mle_crd_t around_y) {
+	mle_val_t* rotated_data = calloc(sizeof(mle_val_t)*map_p->channels_n*map_p->w*map_p->h, 1);
+
+	double t = tanf(rad/2);
+	double s = sinf(rad);
+
+	for (mle_crd_t x = 0; x < map_p->w; x++) {
+		for (mle_crd_t y = 0; y < map_p->h; y++) {
+			int new_x = x-around_x, new_y = y-around_y;
+			// There's some matrix math, NO FUCKING IDEA.
+			new_x = roundf(new_x - t*new_y);// + map_p->w/2*t);
+			new_y = roundf(new_y + new_x*s);// - map_p->h/2*s);
+			new_x = roundf(new_x - t*new_y);// + map_p->w/2*t);
+			new_x += around_x;
+			new_y += around_y;
+
+			// Discarding pixels that come out
+			if (
+				new_x >= 0 && new_x < map_p->w && 
+				new_y >= 0 && new_y < map_p->h
+			)
+				for (int c = 0; c < map_p->channels_n; c++) {
+					rotated_data[(map_p->w*new_y+new_x)*map_p->channels_n+c]=
+					map_p->data[(map_p->w*y+x)*map_p->channels_n+c];
 				}
 		}
 	}
