@@ -1,1 +1,1 @@
-# MeatMe server in Go
+# MeatMe server in C
