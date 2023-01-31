@@ -386,6 +386,8 @@ void mle_crop_map(mle_map_t* map_p, int l, int t, int r, int b) {
 // ROTATION
 // ======================
 
+// TODO: instead of rotating the input pixels, rotate the output pixels in the other direction
+// then younk those pixels, GG.
 // HORRIBLE FOR SMALL IMAGES, NO IDEA HOW TO IMROVE.
 // It's based on the shearing method.
 void mle_rotate_map(mle_map_t* map_p, float rad, mle_crd_t around_x, mle_crd_t around_y) {
