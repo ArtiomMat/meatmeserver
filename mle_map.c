@@ -305,6 +305,27 @@ void mle_resize_map(mle_map_t* map_p, mle_crd_t w, mle_crd_t h) {
 	*map_p = resized;
 }
 
+void mle_resize_map(mle_map_t* map_p, mle_crd_t w, mle_crd_t h) {
+	mle_map_t resized;
+	mle_init_map(&resized, w, h, map_p->channels_n);
+	
+	float h_ratio = (float)map_p->h/h;
+	float w_ratio = (float)map_p->w/w;
+
+	mle_val_t pixel[map_p->channels_n];
+	for (int y = 0; y < h; y++) {
+		int picked_y = y*h_ratio;
+		for (int x = 0; x < w; x++) {
+			int picked_x = x*w_ratio;
+			mle_get_map_pixel(map_p, pixel, picked_x, picked_y);
+			mle_set_map_pixel(&resized, pixel, x, y);
+		}
+	}
+
+	mle_free_map(map_p);
+	*map_p = resized;
+}
+
 void mle_crop_map(mle_map_t* map_p, int l, int t, int r, int b) {
 	mle_crd_t cropped_w = r-l, cropped_h = b-t;
 	mle_val_t* cropped_data = calloc(sizeof(mle_val_t)*map_p->channels_n*cropped_w*cropped_h, 1);
