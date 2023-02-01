@@ -9,6 +9,14 @@
 
 #include "mle.h"
 
+typedef struct {
+	uint8_t type;
+	uint16_t width, height;
+	uint16_t num;
+	uint8_t stride;
+	void* data;
+} layer_t;
+
 static long rng_seed = 1;
 void mle_rng_seed(long seed) {
 	rng_seed = seed;
