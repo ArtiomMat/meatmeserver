@@ -84,15 +84,15 @@ void mle_noise_map_killer(mle_map_t* map_p, uint8_t strength, mle_val_t value);
 void mle_limit_map(mle_map_t* map_p, mle_val_t min, mle_val_t max);
 
 enum mle_layer_type_e {
-	MLE_LAYER_NULL,
 	// Hyperparameters: width, height, stride, number of kernels(-1=automatic calculation)
-	MLE_LAYER_CONV,
+	MLE_LAYER_CONVO,
 	// TODO
 	// Hyperparameters: width, height, stride, number of kernels
-	MLE_LAYER_DECONV,
+	MLE_LAYER_UN_CONVO,
 	// Hyperparameters: number of neurons(-1=automatic)
-	MLE_LAYER_NEURONS,
+	MLE_LAYER_NEURO,
 
+	// Hyperparameters: factor(0.0f to 1.0f)
 	MLE_LAYER_DROPOUT,
 
 	// Exclusive to kernel brains.
@@ -100,7 +100,7 @@ enum mle_layer_type_e {
 	MLE_LAYER_MAX_POOL, MLE_LAYER_MIN_POOL, MLE_LAYER_AVG_POOL,
 
 	// TODO
-	MLE_LAYER_AVG_UNPOOL,
+	MLE_LAYER_AVG_UN_POOL,
 
 	// Should be used for the output neurons, as it squishes the values given to it to be from 0 to 1
 	MLE_LAYER_SIGMOID,

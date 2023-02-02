@@ -9,13 +9,24 @@
 
 #include "mle.h"
 
+// At head of each layer struct to identify it.
+// We cast each layer to this 
 typedef struct {
-	uint8_t type;
-	uint16_t width, height;
-	uint16_t num;
-	uint8_t stride;
-	void* data;
+	char t;
+	void* p;
 } layer_t;
+
+typedef struct {
+	layer_t* prev;
+	uint8_t num;
+	uint16_t width, height;
+	uint8_t stride;
+	unit_convo_t* units;
+} layer_convo_t;
+
+typedef struct {
+	uint16_t num;
+} layer_neuro_t;
 
 static long rng_seed = 1;
 void mle_rng_seed(long seed) {
@@ -305,7 +316,7 @@ void mle_resize_map(mle_map_t* map_p, mle_crd_t w, mle_crd_t h) {
 	*map_p = resized;
 }
 
-void mle_resize_map(mle_map_t* map_p, mle_crd_t w, mle_crd_t h) {
+void mle_resize_map_s(mle_map_t* map_p, mle_crd_t w, mle_crd_t h) {
 	mle_map_t resized;
 	mle_init_map(&resized, w, h, map_p->channels_n);
 	

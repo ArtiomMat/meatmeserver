@@ -7,6 +7,7 @@ int main(int args_n, char **args) {
 		puts("Failed to load map.");
 		return 1;
 	}
+
 	/*
 	mle_brain_trainer_t trainer = {
 		{
