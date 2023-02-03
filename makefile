@@ -1,10 +1,18 @@
 cc = gcc
-libs = -lpng -ljpeg -lm -lz -lpng
-flags = -Wall -Werror
+libs =  -lpng -ljpeg -lm
+flags = -Imle -Wall -Werror
 
-out = meatme
-src_c = mle_map.c main.c
-src_h = mle.h
+o = mle_map.o main.o
+h = *.h
 
-${out}: ${src_c} ${src_h}
-	${cc} ${flags} -o ${out} ${src_c} ${libs}
+server: ${o}
+	${cc} -o $@ ${flags} ${o} ${libs}
+
+%.o: %.c ${h}
+	$(cc) ${flags} -c -o $@ $< ${libs}
+
+clean:
+	rm -rf *.o
+	rm server
+
+.PHONY: makelib

@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 /*
-	Machine Learning EASY!
+	Machine Learning made Easy
 
 	A library mainly designed for image processing, with CNN, DNN, FCN, RNN,
 	support, with modularity.
@@ -21,6 +21,7 @@ typedef unsigned short mle_crd_t;
 typedef float mle_val_t;
 
 void mle_rng_seed(long seed);
+int mle_rng(void);
 
 /*
 	The default value ranges of data are 0 to 1, this is how it is when
@@ -88,31 +89,53 @@ enum mle_layer_type_e {
 	MLE_LAYER_CONVO,
 	// TODO
 	// Hyperparameters: width, height, stride, number of kernels
-	MLE_LAYER_UN_CONVO,
+	MLE_LAYER_UNCONVO,
 	// Hyperparameters: number of neurons(-1=automatic)
 	MLE_LAYER_NEURO,
 
 	// Hyperparameters: factor(0.0f to 1.0f)
 	MLE_LAYER_DROPOUT,
 
-	// Exclusive to kernel brains.
 	// Hyperparameters: width AND height, stride
-	MLE_LAYER_MAX_POOL, MLE_LAYER_MIN_POOL, MLE_LAYER_AVG_POOL,
+	MLE_LAYER_POOL_MAX,MLE_LAYER_POOL_MIN, MLE_LAYER_POOL_AVG,
 
 	// TODO
-	MLE_LAYER_AVG_UN_POOL,
+	MLE_LAYER_UNPOOL_AVG,
 
 	// Should be used for the output neurons, as it squishes the values given to it to be from 0 to 1
-	MLE_LAYER_SIGMOID,
+	MLE_LAYER_F_SIGMOID,
 	// Should be used for the output neurons, as it squishes the values given to it to be from -1 to 1
-	MLE_LAYER_TANH,
+	MLE_LAYER_F_TANH,
 	// Should be used for hidden layers, ELU is preferred for speed of gradient descent.
-	MLE_LAYER_LEAKY_RELU,
+	MLE_LAYER_F_LEAKY_RELU,
 	// Use for hidden layers, preferred for speed of gradient descent.
-	MLE_LAYER_ELU,
+	MLE_LAYER_F_ELU,
 	// Use for hidden layers, Can cause the Dying ReLU problem, use ELU or Leaky ReLU, prefer ELU.
-	MLE_LAYER_RELU,
+	MLE_LAYER_F_RELU,
 };
+
+typedef struct mle_brain_s mle_brain_t;
+
+mle_brain_t* mle_init_brain(uint8_t layers_num);
+void mle_free_brain(mle_brain_t* brain_p);
+mle_brain_t* mle_open_brain(const char* fp);
+void mle_save_brain(mle_brain_t* brain_p, const char* fp);
+
+void mle_add_function_layer(enum mle_layer_type_e type);
+void mle_add_dropout_layer(float factor);
+void mle_add_pool_layer(uint16_t w, uint16_t h, enum mle_layer_type_e type);
+void mle_add_neuro_layer(uint16_t units_num);
+void mle_add_convo_layer(uint8_t units_num, uint16_t w, uint16_t h, uint8_t stride);
+
+typedef struct {
+	void* outputs;
+	int outputs_mem_size;
+	mle_brain_t* p;
+} mle_runner_t;
+
+void mle_init_runner(mle_runner_t* runner_p);
+void mle_free_runner(mle_runner_t* runner_p);
+void mle_run(mle_runner_t* runner_p);
 
 typedef struct {
 	// Allocate it according to the output layer, for example if the output layer is
@@ -121,9 +144,7 @@ typedef struct {
 	// Allocate it according to the output layer, if the layer is convolution
 	// for example, the input should be a map, so use mle_map_init().
 	void* input_p;
-} mle_training_sample_t;
-
-typedef void* mle_brain_p_t;
+} mle_train_sample_t;
 
 typedef struct {
 	/*
@@ -141,14 +162,13 @@ If the
 	// How many samples do you give before we run the back prop algorithm.
 	// Bigger means faster 
 	int batch_size;
-	void (*init_sample) (mle_training_sample_t* input);
+	void (*on_sample) (mle_train_sample_t* input);
+	void (*on_epoch) (mle_train_sample_t* input);
 
-	mle_brain_p_t p; // Pointer to the trained brain, don't touch.
-} mle_brain_trainer_t;
+	mle_runner_t* runner;
+	mle_brain_t* p; // Pointer to the trained brain, don't touch.
+} mle_trainer_t;
 
-/*
-	create
-	for batches
-		
-
-*/
+void mle_init_trainer(mle_runner_t* runner_p);
+void mle_free_trainer(mle_runner_t* runner_p);
+void mle_train(mle_runner_t* runner_p);

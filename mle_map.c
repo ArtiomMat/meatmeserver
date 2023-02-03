@@ -7,33 +7,14 @@
 #include <jpeglib.h>
 #include <png.h>
 
-#include "mle.h"
-
-// At head of each layer struct to identify it.
-// We cast each layer to this 
-typedef struct {
-	char t;
-	void* p;
-} layer_t;
-
-typedef struct {
-	layer_t* prev;
-	uint8_t num;
-	uint16_t width, height;
-	uint8_t stride;
-	unit_convo_t* units;
-} layer_convo_t;
-
-typedef struct {
-	uint16_t num;
-} layer_neuro_t;
+#include "mle_local.h"
 
 static long rng_seed = 1;
 void mle_rng_seed(long seed) {
 	rng_seed = seed;
 }
 // Good luck getting repeating values out of this
-static int rng(void) {
+int mle_rng(void) {
 	rng_seed = (rng_seed * 0x2051064DE3) >> 32;
 	return (int)rng_seed;
 }
@@ -425,8 +406,8 @@ void mle_rotate_map_old(mle_map_t* map_p, float rad, mle_crd_t around_x, mle_crd
 // ======================
 
 static void apply_noise(mle_val_t* v, uint8_t strength) {
-	mle_val_t r = ((rng() % (strength+1))/255.0f);
-	if (rng()%2) // Subtract or add? IDK.
+	mle_val_t r = ((mle_rng() % (strength+1))/255.0f);
+	if (mle_rng()%2) // Subtract or add? IDK.
 		*v+=r;
 	else
 		*v-=r;
@@ -449,7 +430,7 @@ void mle_noise_map_limited(mle_map_t* map_p, uint8_t strength, mle_val_t min, ml
 
 void mle_noise_map_killer(mle_map_t* map_p, uint8_t strength, mle_val_t value) {
 	for (int i = 0; i < map_p->w*map_p->h; i+=map_p->channels_n) {
-		if ((unsigned char)rng() <= strength)
+		if ((unsigned char)mle_rng() <= strength)
 			for (int c = 0; c < map_p->channels_n; c++)
 				map_p->data[i+c] = value;
 	}
