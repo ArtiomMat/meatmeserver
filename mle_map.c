@@ -22,6 +22,7 @@ int mle_rng(void) {
 void mle_init_map(mle_map_t* map_p, mle_crd_t w, mle_crd_t h, int channels_n) {
 	map_p->w = w;
 	map_p->h = h;
+	map_p->saved_colors = MLE_COLORS_AUTO;
 	map_p->channels_n = channels_n;
 	map_p->data = malloc(w*h*channels_n*sizeof(float));
 }

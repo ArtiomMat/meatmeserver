@@ -2,7 +2,7 @@ cc = gcc
 libs =  -lpng -ljpeg -lm
 flags = -Imle -Wall -Werror
 
-o = mle_map.o main.o
+o = mle_map.o main.o mle_maker.o mle_brain.o
 h = *.h
 
 server: ${o}
