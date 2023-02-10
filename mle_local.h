@@ -2,52 +2,102 @@
 
 #include "mle.h"
 
+// Width and height are stored in weights
+typedef struct {
+	struct {
+		// Both allocated to be the size of the first layer's map_cfgs_n
+		mle_map_t weights;
+		mle_val_t bias;
+	}* units; // 8
+
+	struct {
+		uint16_t mode	: 2; // 0=disabled, 1=min, 2=avg, 3=max
+		uint16_t stride	: 4;
+		uint16_t width	: 5;
+		uint16_t height	: 5;
+	} pool;
+	struct {
+		uint8_t prob; // 255 for full training.
+	} dropout_prob; // 1
+	uint8_t stride;
+	uint8_t dilation;
+	uint8_t padding;
+
+	uint8_t units_n; // 1
+
+	uint8_t func; // Activation function
+} layer_c_t;
+
+typedef struct {
+	struct {
+		mle_val_t* weights; // The size of the previous layer's units_n.
+		mle_val_t bias;
+	}* units;
+
+	struct {
+		uint8_t prob; // 255 for full training.
+	} dropout;
+
+	uint16_t units_n;
+	
+	uint8_t func; // Activation function
+} layer_n_t;
+
+typedef struct mle_lobe_s {
+	struct lobe_s** inputs; // The lobes that are inputted into this lobe.
+	struct lobe_s** outputs; // The lobes we output this lobe's outputs.
+	
+	union {
+		layer_n_t* nlayers;
+		layer_c_t* clayers;
+	};
+
+	uint8_t inputs_n;
+	uint8_t outputs_n;
+
+	uint8_t layers_n;
+
+	uint8_t t;
+} mle_lobe_t, lobe_t;
+
 // At head of each layer struct to identify it.
 // We cast each layer to this 
 typedef struct layer_s {
 	char t;
 	union {
-		// Pointer for more complex structs that cannot fit in 8 bytes.
-		void* p;
+		// Pointers for more complex structs that cannot fit in 8 bytes.
+		struct {
+			uint16_t units_n;
+			struct {
+				// The size of the previous layer's units_n.
+				mle_val_t* weights;
+				mle_val_t bias;
+			}* units;
+		}* l_neuro_p;
+		struct {
+			struct {
+				// Both allocated to be the size of the first layer's map_cfgs_n
+				mle_map_t weights;
+				mle_val_t bias;
+			}* units;
+			uint8_t stride;
+			uint8_t units_n;
+		}* l_convo_p;
 
-		// Structures and members that fit in 8 bytes and don't require p:
+		// Structures and members that fit in 8 bytes and don't require pointers:
 
-		uint16_t io_vals_n;
-		uint8_t dropout_prob;
+		struct {
+			int n;
+		} l_io_vals;
+		struct {
+			mle_map_cfg_t cfg;
+		} l_io_map;
+		struct {
+			uint8_t prob;
+		} l_dropout;
 		struct {
 			uint16_t width, height;
 			uint8_t stride;
-		} pool;
+		} l_pool;
 	};
 } layer_t;
-
-typedef struct mle_brain_s {
-	// Includes input layer.
-	layer_t* layers;
-	uint8_t layers_n;
-} mle_brain_t;
-
-typedef struct {
-	// TODO: Can probably be removed, units[0].map.w/h already dictate it.
-	uint16_t width, height;
-	uint8_t stride;
-	uint8_t units_n;
-	struct {
-		mle_map_t map;
-		mle_val_t bias;
-	}* units;
-} layer_convo_t;
-
-typedef struct {
-	uint16_t units_n;
-	struct {
-		// The size of the previous layer's units_n.
-		mle_val_t* weights;
-		mle_val_t bias;
-	}* units;
-} layer_neuro_t;
-
-typedef struct {
-	mle_map_cfg_t* map_cfgs;
-	uint8_t map_cfgs_n;
-} layer_io_maps_t;

@@ -23,6 +23,8 @@ typedef float mle_val_t;
 void mle_rng_seed(long seed);
 int mle_rng(void);
 
+// ==========================================================================
+
 enum {
 	MLE_COLORS_AUTO,
 	// Nice eye friendly heatmap, after converting to grayscale ofc
@@ -97,19 +99,62 @@ void mle_noise_map_killer(mle_map_t* map_p, uint8_t strength, mle_val_t value);
 // Pixels above of below min or max are set to min or max respectively.
 void mle_limit_map(mle_map_t* map_p, mle_val_t min, mle_val_t max);
 
-typedef struct mle_brain_s mle_brain_t;
+// ==========================================================================
+
+typedef enum mle_lobe_type_e {
+	MLE_LOBE_N, // Neural Network
+	MLE_LOBE_C, // Convolutional Network
+	MLE_LOBE_D, // Deconvolutional Network
+	MLE_LOBE_R, // Recurrent Network
+	MLE_LOBE_T, // Transformer Network
+} mle_lobe_type_t;
+
+typedef struct mle_lobe_s mle_lobe_t;
+
+typedef struct {
+	uint16_t t		: 2; // 0=disabled, 0=min, 1=avg, 2=max
+	uint16_t stride	: 4;
+	uint16_t width	: 5;
+	uint16_t height	: 5;
+} mle_pool_cfg_t;
+
+/*
+	layers_n does not include inputs and outputs, it's just the hidden layers number.
+
+	inputs_n=0 implies the lobe is an input lobe itself.
+	
+	outputs_n=0 implies the lobe is an output lobe itself.
+*/
+void mle_init_lobe(mle_lobe_t* l, mle_lobe_type_t t, int layers_n, int inputs_n, int outputs_n);
+void mle_free_lobe(mle_lobe_t* l);
+
+void mle_set_lobe_input(mle_lobe_t* l, int i, mle_lobe_t* input);
+void mle_set_lobe_output(mle_lobe_t* l, int i, mle_lobe_t* input);
+
+void mle_set_lobe_layer_c(mle_lobe_t* l, int i, uint8_t w, uint8_t h, uint8_t stride, uint8_t dilation, uint8_t padding);
+
+void mle_set_lobe_layer_c(mle_lobe_t* l, int i, uint8_t w, uint8_t h, uint8_t stride, uint8_t dilation, uint8_t padding);
+
+// ==========================================================================
+
+/*
+	The brain is made out of lobes, which are simply arrays of layers. Using lobes allows a brain to be two dimentional, and have a tree-like structure, with each lobe being one dimentional.
+
+	Each lobe has it's own dedicated type of network(CN, NN, etc.), it has a single input and single output of it's respective network type(i.e map for CN), and hidden layers inbetween. The output connects as an input to another/other lobe/s, that HAVE to be of a different type, otherwise there is no purpose to have two lobes of the same type connected, the idea is not organization but versatility. These output lobes combine multiple inputs into a single input. So the cool thing about brains, is that they can have multiple inputs and outputs, so it's useful for say relationship based models, that observe relationships between multiple inputs, maybe comparing two faces.
+*/
+typedef struct {
+	struct mle_lobe_s* input_lobes;
+	int input_lobes_n;
+} mle_brain_t;
+
 
 // hidden_layers_n does not include input layer, only hidden.
-mle_brain_t* mle_init_brain(uint8_t hidden_layers_n);
+mle_brain_t* mle_init_brain(enum mle_lobe_type_e input_lobes, int input_lobes_n);
 void mle_free_brain(mle_brain_t* brain_p);
 mle_brain_t* mle_open_brain(const char* fp);
 void mle_save_brain(mle_brain_t* brain_p, const char* fp);
 
-/*
-	MAKER:
-	Utility that helps make a brain structure from scratch.
-	Using the makers you can add layers and automate hyperparameters.
-*/
+// ==========================================================================
 
 typedef enum {
 	// Automatically determine hyperparameter
@@ -122,7 +167,7 @@ typedef enum {
 	// The OG input/output layer, simply values.
 	MLE_LAYER_IO_VALS=0,
 	// Notice the S, multiple maps are allowd as input/output.
-	MLE_LAYER_IO_MAPS,
+	MLE_LAYER_IO_MAP,
 
 	// Hyperparameters: width, height, stride, number of kernels(-1=automatic calculation)
 	MLE_LAYER_CONVO,
@@ -142,24 +187,26 @@ typedef enum {
 	MLE_LAYER_UNPOOL_AVG,
 
 	// Should be used for the output neurons, as it squishes the values given to it to be from 0 to 1
-	MLE_LAYER_F_SIGMOID,
+	MLE_FUNC_SIGMOID,
 	// Should be used for the output neurons, as it squishes the values given to it to be from -1 to 1
-	MLE_LAYER_F_TANH,
+	MLE_FUNC_TANH,
 	// Should be used for hidden layers, ELU is preferred for speed of gradient descent.
-	MLE_LAYER_F_LEAKY_RELU,
+	MLE_FUNC_LEAKY_RELU,
 	// Use for hidden layers, preferred for speed of gradient descent.
-	MLE_LAYER_F_ELU,
+	MLE_FUNC_ELU,
 	// Use for hidden layers, Can cause the Dying ReLU problem, use ELU or Leaky ReLU, prefer ELU.
-	MLE_LAYER_F_RELU,
+	MLE_FUNC_RELU,
 } mle_layer_type_t;
 
 typedef struct {
 	int index;
-	// Cached amount of "nodes" created only for the last layer."
-	int last_nodes;
-	// We cache the total amount of "nodes" created after each layer, so that
-	// transitions between layer types work.
-	int total_nodes;
+	// TODO: Maybe we don't need to cache it? just creates duplicate if we use map, though does save calculation for vals. IDK.
+	int channels_n;
+	// Cached state of the last convolution, includes the pools.
+	struct {
+		int w, h; // Width an height of every convolved map.
+		int n; // Number of convolved maps.
+	} last_cstate;
 	mle_brain_t* p;
 } mle_maker_t;
 
@@ -168,11 +215,17 @@ typedef struct {
 	uint8_t channels_n;
 } mle_map_cfg_t;
 
-// Please call mle_finish_maker() after you finish adding all the layers.
+/* 
+Please call mle_finish_maker() after you finish adding all the layers.
+*/
 void mle_init_maker_in_vals(mle_maker_t* maker_p, mle_brain_t* brain_p, int vals_n);
-// Please call mle_finish_maker() after you finish adding all the layers.
-// map_cfgs is copied.
-void mle_init_maker_in_maps(mle_maker_t* maker_p, mle_brain_t* brain_p, mle_map_cfg_t* map_cfgs, int maps_n);
+/* 
+Please call mle_finish_maker() after you finish adding all the layers.
+
+When input layer is a map, if the next layer is a neuron layer it is
+map_cfgs is copied.
+*/
+void mle_init_maker_in_map(mle_maker_t* maker_p, mle_brain_t* brain_p, mle_map_cfg_t map_cfg);
 void mle_free_maker(mle_maker_t* maker_p);
 
 void mle_add_function_layer(mle_maker_t* maker_p, mle_layer_type_t type);
@@ -198,26 +251,21 @@ void mle_add_convo_layer(mle_maker_t* maker_p, mle_hp_t units_n, mle_hp_t w, mle
 // 
 void mle_end_maker(mle_maker_t* maker_p);
 
-/*
-	RUNNER:
-	Utility that runs a brain for you, as fast as possible.
-*/
+// ==========================================================================
 
 typedef struct {
-	void* outputs;
 	int outputs_mem_size;
+	void* outputs;
 	mle_brain_t* p;
+	// Can be programatically found but better to have it cached.
+	struct mle_lobe_s* output_lobes;
 } mle_runner_t;
 
 void mle_init_runner(mle_runner_t* runner_p);
 void mle_free_runner(mle_runner_t* runner_p);
 void mle_run(mle_runner_t* runner_p, void* input);
 
-/*
-	TRAINER:
-	Utility that trains a brain for you, as fast as possible.
-	The utility is interactive enough for almost any need.
-*/
+// ==========================================================================
 
 typedef struct {
 	// Allocate it according to the output layer, for example if the output layer is

@@ -1,28 +1,11 @@
-input maps n=2 width=64 height=64 channels_n=3
+lobe 'pic0_c'
+	layer w=100 h=100 pool=()
 
-layer convo n=9 width=3 height=3 stride=1
-layer lrelu
-layer max_pool width=3 height=3 stride=1
-layer dropout
+lobe 'pic1_c'
+	copy 'pic0_c'
 
-layer convo n=9 width=3 height=3 stride=1
-layer lrelu
-layer max_pool width=3 height=3 stride=1
-layer dropout
+..0 to 'pic0_c' to 'main_n'
 
-layer convo n=9 width=3 height=3 stride=1
-layer lrelu
-layer max_pool width=3 height=3 stride=1
-layer dropout
+..1 to 'pic1_c' to 'main_n'
 
-layer neuro n=auto
-layer lrelu
-layer neuro n=last/2
-layer lrelu
-layer neuro n=last
-layer lrelu
-layer neuro n=last
-layer lrelu
-layer neuro n=1
-
-output values
+'main_n' to **0
