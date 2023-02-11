@@ -105,18 +105,30 @@ typedef enum mle_lobe_type_e {
 	MLE_LOBE_N, // Neural Network
 	MLE_LOBE_C, // Convolutional Network
 	MLE_LOBE_D, // Deconvolutional Network
-	MLE_LOBE_R, // Recurrent Network
+	// MLE_LOBE_R, // Recurrent Network
 	MLE_LOBE_T, // Transformer Network
 } mle_lobe_type_t;
 
-typedef struct mle_lobe_s mle_lobe_t;
+enum {
+	MLE_POOL_NULL=0,
+	MLE_POOL_MIN,
+	MLE_POOL_AVG,
+	MLE_POOL_MAX,
 
-typedef struct {
-	uint16_t t		: 2; // 0=disabled, 0=min, 1=avg, 2=max
-	uint16_t stride	: 4;
-	uint16_t width	: 5;
-	uint16_t height	: 5;
-} mle_pool_cfg_t;
+	MLE_FUNC_NULL=0,
+	// Should be used for the output neurons, as it squishes the values given to it to be from 0 to 1
+	MLE_FUNC_SIGMOID,
+	// Should be used for the output neurons, as it squishes the values given to it to be from -1 to 1
+	MLE_FUNC_TANH,
+	// Should be used for hidden layers, ELU is preferred for speed of gradient descent.
+	MLE_FUNC_LEAKY_RELU,
+	// Use for hidden layers, preferred for speed of gradient descent.
+	MLE_FUNC_ELU,
+	// Use for hidden layers, Can cause the Dying ReLU problem, use ELU or Leaky ReLU, prefer ELU.
+	MLE_FUNC_RELU,
+};
+
+typedef struct mle_lobe_s mle_lobe_t;
 
 /*
 	layers_n does not include inputs and outputs, it's just the hidden layers number.
@@ -131,9 +143,27 @@ void mle_free_lobe(mle_lobe_t* l);
 void mle_set_lobe_input(mle_lobe_t* l, int i, mle_lobe_t* input);
 void mle_set_lobe_output(mle_lobe_t* l, int i, mle_lobe_t* input);
 
-void mle_set_lobe_layer_c(mle_lobe_t* l, int i, uint8_t w, uint8_t h, uint8_t stride, uint8_t dilation, uint8_t padding);
+void mle_set_lobe_n_layer(mle_lobe_t* l, int i, uint8_t units_n);
+void mle_set_lobe_c_layer(mle_lobe_t* l, int i, uint8_t units_n, uint8_t w, uint8_t h, uint8_t stride, uint8_t dilation, uint8_t padding);
 
-void mle_set_lobe_layer_c(mle_lobe_t* l, int i, uint8_t w, uint8_t h, uint8_t stride, uint8_t dilation, uint8_t padding);
+/*
+i is the index of the affected REAL layer, don't increment to the next layer!
+
+Valid only for CN.
+*/
+void mle_set_lobe_layer_pool(mle_lobe_t* l, int i, uint8_t w, uint8_t h, uint8_t stride, uint8_t mode);
+/*
+i is the index of the affected REAL layer, don't increment to the next layer!
+
+1 for 100% training probability, 0 for 0% probability of training the node.
+For CNN a node is a pixel in the filter map.
+*/
+void mle_set_lobe_layer_dropout(mle_lobe_t* l, int i, float prob);
+/*
+i is the index of the affected REAL layer, don't increment to the next layer!
+Use MLE_FUNC_* for func.
+*/
+void mle_set_lobe_layer_func(mle_lobe_t* l, int i, uint8_t func);
 
 // ==========================================================================
 
@@ -149,7 +179,7 @@ typedef struct {
 
 
 // hidden_layers_n does not include input layer, only hidden.
-mle_brain_t* mle_init_brain(enum mle_lobe_type_e input_lobes, int input_lobes_n);
+mle_brain_t* mle_init_brain(mle_lobe_t* input_lobes, enum mle_lobe_type_e input_lobes_n);
 void mle_free_brain(mle_brain_t* brain_p);
 mle_brain_t* mle_open_brain(const char* fp);
 void mle_save_brain(mle_brain_t* brain_p, const char* fp);
@@ -186,16 +216,7 @@ typedef enum {
 	// TODO
 	MLE_LAYER_UNPOOL_AVG,
 
-	// Should be used for the output neurons, as it squishes the values given to it to be from 0 to 1
-	MLE_FUNC_SIGMOID,
-	// Should be used for the output neurons, as it squishes the values given to it to be from -1 to 1
-	MLE_FUNC_TANH,
-	// Should be used for hidden layers, ELU is preferred for speed of gradient descent.
-	MLE_FUNC_LEAKY_RELU,
-	// Use for hidden layers, preferred for speed of gradient descent.
-	MLE_FUNC_ELU,
-	// Use for hidden layers, Can cause the Dying ReLU problem, use ELU or Leaky ReLU, prefer ELU.
-	MLE_FUNC_RELU,
+
 } mle_layer_type_t;
 
 typedef struct {
