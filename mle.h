@@ -131,6 +131,8 @@ enum {
 typedef struct mle_lobe_s mle_lobe_t;
 
 /*
+	If you are using MLE_LOBE_C you MUST set l->map_cfg to it's configuration.
+
 	layers_n does not include inputs and outputs, it's just the hidden layers number.
 
 	inputs_n=0 implies the lobe is an input lobe itself.
@@ -141,7 +143,7 @@ void mle_init_lobe(mle_lobe_t* l, mle_lobe_type_t t, int layers_n, int inputs_n,
 void mle_free_lobe(mle_lobe_t* l);
 
 void mle_set_lobe_input(mle_lobe_t* l, int i, mle_lobe_t* input);
-void mle_set_lobe_output(mle_lobe_t* l, int i, mle_lobe_t* input);
+void mle_set_lobe_output(mle_lobe_t* l, int i, mle_lobe_t* output);
 
 void mle_set_lobe_n_layer(mle_lobe_t* l, int i, uint8_t units_n);
 void mle_set_lobe_c_layer(mle_lobe_t* l, int i, uint8_t units_n, uint8_t w, uint8_t h, uint8_t stride, uint8_t dilation, uint8_t padding);

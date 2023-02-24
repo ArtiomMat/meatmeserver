@@ -12,5 +12,6 @@ int main(int args_n, char **args) {
 	mle_add_dropout_layer(&maker, MLE_HP_LAST);
 	mle_add_dropout_layer(&maker, MLE_HP_AUTO);
 	mle_add_dropout_layer(&maker, MLE_HP_LAST);
+	
 	return 0;
 }

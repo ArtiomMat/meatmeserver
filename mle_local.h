@@ -48,9 +48,12 @@ typedef struct mle_lobe_s {
 	struct lobe_s** outputs; // The lobes we output this lobe's outputs.
 	
 	union {
-		layer_n_t* nlayers;
-		layer_c_t* clayers;
+		void* pl; // The pointer to any layer
+		layer_n_t* nl;
+		layer_c_t* cl;
 	};
+
+	mle_map_cfg_t map_cfg; // Only used if this is a convolutional lobe.
 
 	uint8_t inputs_n;
 	uint8_t outputs_n;
@@ -59,6 +62,10 @@ typedef struct mle_lobe_s {
 
 	uint8_t t;
 } mle_lobe_t, lobe_t;
+
+x() {
+	sizeof(mle_lobe_t);
+}
 
 // At head of each layer struct to identify it.
 // We cast each layer to this 
